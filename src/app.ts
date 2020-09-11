@@ -27,7 +27,7 @@ Handlebars.registerHelper('chance', (funcName: string, ...rest: any[]) => {
     }
 })
 
-interface RuntimeRequestBody {
+export interface RuntimeRequestBody {
     path: string;
     body: any;
     status?: number;
@@ -39,17 +39,30 @@ const isRuntimeRequestBody = (obj: any): obj is RuntimeRequestBody => {
         && (obj.status === undefined || !isNaN(Number(obj.status)))
 }
 
-interface RuntimeRequestCollection {
+export interface RuntimeRequestCollection {
     [path: string]: RuntimeRequestBody
 }
 
+const isRuntimeRequestCollection = (obj: any): obj is RuntimeRequestCollection => {
+    return !Object.keys(obj).some(k => !isRuntimeRequestBody(obj[k]))
+}
+
 export const appFactory = (runtimeCollection?: RuntimeRequestCollection) => {
+    let runtimeRequestCollection: RuntimeRequestCollection = runtimeCollection || {};
+    if (!isRuntimeRequestCollection(runtimeRequestCollection)) {
+        throw new Error('Intial requests JSON is invalid')
+    }
+
+    Object.keys(runtimeRequestCollection).forEach(key => {
+        runtimeRequestCollection[key].path = `/${key}`.replace(/\/\//g, '/')
+    });
+
     const app = express();
 
     app.use(cors());
     app.use(bodyParser.json());
 
-    let runtimeRequestCollection: RuntimeRequestCollection = runtimeCollection || {};
+
 
     app.get('/', (_req, res) => res.send(runtimeRequestCollection));
 
