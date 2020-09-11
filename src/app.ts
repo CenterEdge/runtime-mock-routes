@@ -5,7 +5,7 @@ import express from 'express';
 import faker from 'faker';
 import createMatcher from 'feather-route-matcher';
 import Handlebars from 'handlebars';
-import { get } from 'lodash';
+import { cloneDeep, get } from 'lodash';
 
 const chance = new Chance();
 
@@ -62,8 +62,6 @@ export const appFactory = (runtimeCollection?: RuntimeRequestCollection) => {
     app.use(cors());
     app.use(bodyParser.json());
 
-
-
     app.get('/', (_req, res) => res.send(runtimeRequestCollection));
 
     app.post('/', (req, res) => {
@@ -74,7 +72,7 @@ export const appFactory = (runtimeCollection?: RuntimeRequestCollection) => {
                 ...runtimeRequestCollection,
                 [fixedPath]: body
             }
-            return res.status(202).send();
+            return res.status(204).send();
         }
         return res.status(400).send();
     })
@@ -103,8 +101,7 @@ export const appFactory = (runtimeCollection?: RuntimeRequestCollection) => {
         return res.status(204).send();
     });
 
-    app.get('/*', (req, res) => {
-
+    const catchAllHandler = (req, res) => {
         const matcher = createMatcher(runtimeRequestCollection);
 
         const routeMatch = matcher(req.path);
@@ -114,8 +111,9 @@ export const appFactory = (runtimeCollection?: RuntimeRequestCollection) => {
             const params = routeMatch.params;
 
             const tokenParams = {
-                ...req.query,
-                ...params
+                query: req.query,
+                params,
+                body: req.body
             }
 
             if (reqInfo.status) {
@@ -140,7 +138,16 @@ export const appFactory = (runtimeCollection?: RuntimeRequestCollection) => {
         }
 
         return res.status(404).send();
-    });
+    }
+
+    app.get('/*', catchAllHandler)
+    app.post('/*', catchAllHandler)
+
+    Object.defineProperty(app, 'runtimeRequestCollection', {
+        get: () => {
+            return cloneDeep(runtimeRequestCollection);
+        }
+    })
 
     return app;
 }

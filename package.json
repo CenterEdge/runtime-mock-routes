@@ -1,15 +1,15 @@
 {
-  "name": "runtime-get-routes",
+  "name": "runtime-mock-routes",
   "version": "1.0.0",
   "description": "",
   "main": "build/index.js",
   "scripts": {
     "build": "tsc --project ./",
     "start": "nodemon -r dotenv/config index.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest"
   },
   "bin": {
-    "runtime-get-routes": "./build/index.js"
+    "runtime-mock-routes": "./build/index.js"
   },
   "keywords": [],
   "author": "",
@@ -33,10 +33,15 @@
     "@types/express": "^4.17.8",
     "@types/faker": "^5.1.0",
     "@types/fs-extra": "^9.0.1",
+    "@types/jest": "^26.0.13",
     "@types/lodash": "^4.14.161",
     "@types/node": "^14.10.0",
+    "@types/supertest": "^2.0.10",
     "dotenv": "^8.2.0",
+    "jest": "^26.4.2",
     "nodemon": "^2.0.4",
+    "supertest": "^4.0.2",
+    "ts-jest": "^26.3.0",
     "ts-node": "^9.0.0",
     "typescript": "^4.0.2"
   }
