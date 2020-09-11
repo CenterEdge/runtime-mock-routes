@@ -1,8 +1,31 @@
 import bodyParser from 'body-parser';
+import Chance from 'chance';
 import cors from 'cors';
 import express from 'express';
+import faker from 'faker';
 import createMatcher from 'feather-route-matcher';
 import Handlebars from 'handlebars';
+import { get } from 'lodash';
+
+const chance = new Chance();
+
+Handlebars.registerHelper('faker', (funcName: string, ...rest: any[]) => {
+    try {
+        const func = get(faker, funcName, () => '');
+        return func(...rest);
+    } catch (err) {
+        return err;
+    }
+});
+
+Handlebars.registerHelper('chance', (funcName: string, ...rest: any[]) => {
+    try {
+        const func = get(chance, funcName, () => '');
+        return func.call(chance, ...rest);
+    } catch (err) {
+        return err
+    }
+})
 
 interface RuntimeRequestBody {
     path: string;
@@ -43,14 +66,33 @@ export const appFactory = (runtimeCollection?: RuntimeRequestCollection) => {
         return res.status(400).send();
     })
 
+    app.delete('/', (req, res) => {
+        let { path } = req.query;
+
+        if (!path) {
+            return res.status(204).send();
+        }
+
+        if (!Array.isArray(path)) {
+            path = [`${path}`];
+        }
+
+        const newCollection: RuntimeRequestCollection = (path as any[]).reduce(
+            (acc, curr) => {
+                const { [`${curr}`]: _, ...restOfObj } = acc;
+                return restOfObj;
+            },
+            runtimeRequestCollection
+        );
+
+        runtimeRequestCollection = newCollection;
+
+        return res.status(204).send();
+    });
+
     app.get('/*', (req, res) => {
 
         const matcher = createMatcher(runtimeRequestCollection);
-
-        const query = Object.keys(req.query).reduce((acc, key) => ({
-            ...acc,
-            [key]: Array.isArray(req.query[key]) ? req.query[key] : [req.query[key]]
-        }), {} as any);
 
         const routeMatch = matcher(req.path);
 
@@ -59,7 +101,7 @@ export const appFactory = (runtimeCollection?: RuntimeRequestCollection) => {
             const params = routeMatch.params;
 
             const tokenParams = {
-                ...query,
+                ...req.query,
                 ...params
             }
 
