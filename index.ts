@@ -2,7 +2,7 @@
 import { program } from 'commander';
 import { readJsonSync } from 'fs-extra';
 import { resolve } from 'path';
-import { appFactory, RuntimeRequestCollection } from './src/app';
+import { appFactory, MethodBasedRuntimeRequestCollection } from './src/app';
 
 
 program.version("1.0.0")
@@ -10,7 +10,7 @@ program.version("1.0.0")
     .option("-s, --seed <filePath>", "File path to seed the application", process.env.RUNTIME_MOCK_ROUTES_FILE_PATH)
 
 program.parse(process.argv);
-let initialRequests: RuntimeRequestCollection = {};
+let initialRequests: MethodBasedRuntimeRequestCollection = {};
 if (program.seed) {
     initialRequests = readJsonSync(resolve(program.seed))
 }
