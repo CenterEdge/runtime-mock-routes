@@ -6,6 +6,7 @@ import faker from 'faker';
 import createMatcher from 'feather-route-matcher';
 import Handlebars from 'handlebars';
 import { cloneDeep, get } from 'lodash';
+import sortKeys from 'sort-keys';
 
 const chance = new Chance();
 
@@ -27,50 +28,112 @@ Handlebars.registerHelper('chance', (funcName: string, ...rest: any[]) => {
     }
 })
 
+type SupportedMethodsType = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
+export const SupportedMethodsColection: SupportedMethodsType = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
+export type SupportedMethod = SupportedMethodsType[number];
+
+export const isSupportedMethod = (obj: any): obj is SupportedMethod => SupportedMethodsColection.includes(obj);
+
 export interface RuntimeRequestBody {
     path: string;
     body: any;
+    method: SupportedMethod;
     status?: number;
 }
 
-const isRuntimeRequestBody = (obj: any): obj is RuntimeRequestBody => {
-    return typeof obj.path === 'string'
-        && obj.hasOwnProperty('body')
-        && (obj.status === undefined || !isNaN(Number(obj.status)))
+export const isRuntimeRequestBody = (obj: any): obj is RuntimeRequestBody => {
+    try {
+        return typeof obj.path === 'string'
+            && obj.hasOwnProperty('body')
+            && (obj.status === undefined || !isNaN(Number(obj.status)))
+            && isSupportedMethod(obj.method)
+    } catch (_) { return false; }
 }
 
 export interface RuntimeRequestCollection {
     [path: string]: RuntimeRequestBody
 }
 
-const isRuntimeRequestCollection = (obj: any): obj is RuntimeRequestCollection => {
-    return !Object.keys(obj).some(k => !isRuntimeRequestBody(obj[k]))
+export const isRuntimeRequestCollection = (obj: any): obj is RuntimeRequestCollection => {
+    try { return !Object.keys(obj).some(k => !isRuntimeRequestBody(obj[k])) }
+    catch (_) {
+        return false
+    }
 }
 
-export const appFactory = (runtimeCollection?: RuntimeRequestCollection) => {
-    let runtimeRequestCollection: RuntimeRequestCollection = runtimeCollection || {};
-    if (!isRuntimeRequestCollection(runtimeRequestCollection)) {
+export type MethodBasedRuntimeRequestCollection = Partial<Record<SupportedMethod, RuntimeRequestCollection>>;
+
+export const isMethodBasedRuntimeRequestCollection = (obj: any): obj is MethodBasedRuntimeRequestCollection => {
+    try {
+        return !Object.keys(obj).some(k => !(isSupportedMethod(k) && isRuntimeRequestCollection(obj[k])))
+    } catch (_) {
+        return false
+    }
+}
+
+interface CleanRuntimeRequestCollectionParams {
+    collection: RuntimeRequestCollection;
+    method: SupportedMethod;
+}
+export const cleanRuntimeRequestCollection = (params: CleanRuntimeRequestCollectionParams): RuntimeRequestCollection => {
+    return Object.keys(params.collection).reduce(
+        (acc, curr) => {
+            const sanitizedPath = `/${curr}`.replace(/\/\//g, '/')
+            const fixedRequest: RuntimeRequestBody = {
+                ...params.collection[curr],
+                path: sanitizedPath,
+                method: params.method
+            }
+            return {
+                ...acc,
+                [sanitizedPath]: fixedRequest
+            }
+        },
+        {} as RuntimeRequestCollection
+    );
+};
+
+export const cleanMethodBasedRuntimeRequestCollection = (obj: MethodBasedRuntimeRequestCollection): MethodBasedRuntimeRequestCollection => {
+    return Object.keys(obj).reduce((acc, curr) => {
+        const method = curr as SupportedMethod;
+        const collection: RuntimeRequestCollection = obj[curr];
+        return {
+            ...acc,
+            [curr]: cleanRuntimeRequestCollection({ method, collection })
+        }
+    },
+        {} as MethodBasedRuntimeRequestCollection);
+};
+
+export const singleQueryParam = (obj: any) => Array.isArray(obj) ? `${obj[0]}` : `${obj}`;
+
+export const appFactory = (runtimeCollection?: MethodBasedRuntimeRequestCollection) => {
+    let runtimeRequestCollection: MethodBasedRuntimeRequestCollection = runtimeCollection || {};
+    if (!isMethodBasedRuntimeRequestCollection(runtimeRequestCollection)) {
         throw new Error('Intial requests JSON is invalid')
     }
 
-    Object.keys(runtimeRequestCollection).forEach(key => {
-        runtimeRequestCollection[key].path = `/${key}`.replace(/\/\//g, '/')
-    });
+    runtimeRequestCollection = cleanMethodBasedRuntimeRequestCollection(runtimeRequestCollection);
 
     const app = express();
 
     app.use(cors());
     app.use(bodyParser.json());
 
-    app.get('/', (_req, res) => res.send(runtimeRequestCollection));
+    app.get('/', (_req, res) => res.send(sortKeys(runtimeRequestCollection, { deep: true })));
 
     app.post('/', (req, res) => {
         const { body } = req;
         if (isRuntimeRequestBody(body)) {
             const fixedPath = `/${body.path}`.replace(/\/\//g, '/');
+            body.path = fixedPath;
+            const method = body.method;
             runtimeRequestCollection = {
                 ...runtimeRequestCollection,
-                [fixedPath]: body
+                [method]: {
+                    ...(runtimeRequestCollection[method] || {}),
+                    [fixedPath]: body
+                }
             }
             return res.status(204).send();
         }
@@ -78,31 +141,44 @@ export const appFactory = (runtimeCollection?: RuntimeRequestCollection) => {
     })
 
     app.delete('/', (req, res) => {
-        let { path } = req.query;
+        let { path, method } = req.query;
 
-        if (!path) {
+        if (!path || !method) {
+            return res.status(400).send();
+        }
+
+        const cleanPath = singleQueryParam(path);
+        const cleanMethod = singleQueryParam(method);
+
+        if (!isSupportedMethod(cleanMethod)) {
+            return res.status(400).send();
+        }
+
+        if (!Object.keys(runtimeRequestCollection).includes(cleanMethod)) {
             return res.status(204).send();
         }
 
-        if (!Array.isArray(path)) {
-            path = [`${path}`];
-        }
+        const { [cleanMethod]: oldCollection, ...otherMetods } = runtimeRequestCollection;
+        const { [cleanPath]: _, ...newCollection } = oldCollection;
 
-        const newCollection: RuntimeRequestCollection = (path as any[]).reduce(
-            (acc, curr) => {
-                const { [`${curr}`]: _, ...restOfObj } = acc;
-                return restOfObj;
-            },
-            runtimeRequestCollection
-        );
-
-        runtimeRequestCollection = newCollection;
+        runtimeRequestCollection = {
+            ...otherMetods,
+            [cleanMethod]: newCollection
+        };
 
         return res.status(204).send();
     });
 
     const catchAllHandler = (req, res) => {
-        const matcher = createMatcher(runtimeRequestCollection);
+        const method = req.method;
+        if (!isSupportedMethod(method)) {
+            return res.status(400).send();
+        }
+        const collection = runtimeRequestCollection[method];
+        if (!collection) {
+            return res.status(404).send();
+        }
+        const matcher = createMatcher(collection);
 
         const routeMatch = matcher(req.path);
 
@@ -140,8 +216,11 @@ export const appFactory = (runtimeCollection?: RuntimeRequestCollection) => {
         return res.status(404).send();
     }
 
-    app.get('/*', catchAllHandler)
-    app.post('/*', catchAllHandler)
+    app.get('/*', catchAllHandler);
+    app.post('/*', catchAllHandler);
+    app.put('/*', catchAllHandler);
+    app.patch('/*', catchAllHandler);
+    app.delete('/*', catchAllHandler);
 
     Object.defineProperty(app, 'runtimeRequestCollection', {
         get: () => {
