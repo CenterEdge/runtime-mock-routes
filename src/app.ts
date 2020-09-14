@@ -10,12 +10,6 @@ import sortKeys from 'sort-keys';
 
 const chance = new Chance();
 
-type SupportedMethodsType = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
-const SupportedMethodsColection: SupportedMethodsType = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
-type SupportedMethod = SupportedMethodsType[number];
-
-const isSupportedMethod = (obj: any): obj is SupportedMethod => SupportedMethodsColection.includes(obj);
-
 Handlebars.registerHelper('faker', (funcName: string, ...rest: any[]) => {
     try {
         const func = get(faker, funcName, () => '');
@@ -33,6 +27,12 @@ Handlebars.registerHelper('chance', (funcName: string, ...rest: any[]) => {
         return err
     }
 })
+
+type SupportedMethodsType = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
+const SupportedMethodsColection: SupportedMethodsType = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
+export type SupportedMethod = SupportedMethodsType[number];
+
+export const isSupportedMethod = (obj: any): obj is SupportedMethod => SupportedMethodsColection.includes(obj);
 
 export interface RuntimeRequestBody {
     path: string;
@@ -53,6 +53,8 @@ export interface RuntimeRequestCollection {
 export const isRuntimeRequestCollection = (obj: any): obj is RuntimeRequestCollection => {
     return !Object.keys(obj).some(k => !isRuntimeRequestBody(obj[k]))
 }
+
+export type MethodBasedRuntimeRequestCollection = Partial<Record<SupportedMethod, RuntimeRequestCollection>>;
 
 export const appFactory = (runtimeCollection?: RuntimeRequestCollection) => {
     let runtimeRequestCollection: RuntimeRequestCollection = runtimeCollection || {};
