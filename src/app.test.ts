@@ -1,5 +1,5 @@
 import request from 'supertest'
-import { appFactory, isMethodBasedRuntimeRequestCollection, MethodBasedRuntimeRequestCollection, RuntimeRequestBody, RuntimeRequestCollection } from './app'
+import { SupportedMethodsColection, appFactory, isMethodBasedRuntimeRequestCollection, MethodBasedRuntimeRequestCollection, RuntimeRequestBody, RuntimeRequestCollection } from './app'
 
 describe('appFactory', () => {
     test('Creates app with no seed', () => {
@@ -13,11 +13,13 @@ describe('appFactory', () => {
     });
 
     test('Creates app with properly configured seed', () => {
-        const seed: RuntimeRequestCollection = {
-            "/test": {
-                path: "/test",
-                body: { test: true },
-                method: 'GET'
+        const seed: MethodBasedRuntimeRequestCollection = {
+            GET: {
+                "/test": {
+                    path: "/test",
+                    body: { test: true },
+                    method: 'GET'
+                }
             }
         }
         const app = appFactory(seed);
@@ -26,18 +28,22 @@ describe('appFactory', () => {
     });
 
     test('Creates app with semi-properly configured seed', () => {
-        const seed: RuntimeRequestCollection = {
-            "/test": {
-                path: "/test",
-                body: { test: true },
-                method: 'GET'
+        const seed: MethodBasedRuntimeRequestCollection = {
+            GET: {
+                "/test": {
+                    path: "/test",
+                    body: { test: true },
+                    method: 'GET'
+                }
             }
         }
-        const semiSeed: RuntimeRequestCollection = {
-            "/test": {
-                path: "/test1",
-                body: { test: true },
-                method: 'GET'
+        const semiSeed: MethodBasedRuntimeRequestCollection = {
+            GET: {
+                "/test": {
+                    path: "/test1",
+                    body: { test: true },
+                    method: 'PUT'
+                }
             }
         }
         const app = appFactory(semiSeed);
@@ -57,12 +63,14 @@ describe('appFactory', () => {
 });
 
 describe('GET /', () => {
-    const empty: RuntimeRequestCollection = {};
-    const seeded: RuntimeRequestCollection = {
-        "/test": {
-            path: "/test",
-            body: { test: true },
-            method: 'GET'
+    const empty: MethodBasedRuntimeRequestCollection = {};
+    const seeded: MethodBasedRuntimeRequestCollection = {
+        GET: {
+            "/test": {
+                path: "/test",
+                body: { test: true },
+                method: 'GET'
+            }
         }
     }
     test.each([['empty', empty], ['seeded', seeded]])('should get current collection - %s', async (_, seed) => {
@@ -89,7 +97,7 @@ describe('POST /', () => {
             .expect(204);
 
         expect(app["runtimeRequestCollection"]).toEqual(expect.objectContaining({
-            [reqeustBody.path]: reqeustBody
+            [reqeustBody.method]: { [reqeustBody.path]: reqeustBody }
         }));
     });
 
@@ -106,25 +114,25 @@ describe('POST /', () => {
     });
 });
 
-describe('DELETE /?path=<path>', () => {
+describe('DELETE /?path=<path>&method=<method>', () => {
     test('should remove an existing path', async () => {
         const body: RuntimeRequestBody = {
             path: '/test',
             body: {},
             method: 'GET'
         };
-        const collection: RuntimeRequestCollection = {
-            [body.path]: body
+        const collection: MethodBasedRuntimeRequestCollection = {
+            [body.method]: { [body.path]: body }
         };
         const app = appFactory(collection);
         await request(app)
             .delete('/')
-            .query({ path: [body.path] })
+            .query({ path: [body.path], method: body.method })
             .expect(204);
 
 
         expect(app["runtimeRequestCollection"]).toEqual(expect.not.objectContaining({
-            [body.path]: body
+            [body.method]: expect.objectContaining({ [body.path]: body })
         }));
     })
 
@@ -134,13 +142,13 @@ describe('DELETE /?path=<path>', () => {
             body: {},
             method: 'GET'
         };
-        const collection: RuntimeRequestCollection = {
+        const collection: MethodBasedRuntimeRequestCollection = {
 
         };
         const app = appFactory(collection);
         await request(app)
             .delete('/')
-            .query({ path: [body.path] })
+            .query({ path: [body.path], method: body.method })
             .expect(204);
 
 
@@ -150,55 +158,29 @@ describe('DELETE /?path=<path>', () => {
     })
 });
 
-describe('GET /*', () => {
-    test('should render JSON hbs template', async () => {
+describe('METHOD /*', () => {
+    const methods = SupportedMethodsColection.map(m => [m])
+    test.each(methods)('%s should render JSON hbs template', async (method) => {
         const requestBody: RuntimeRequestBody = {
             path: '/test/:id',
             body: `{"id": {{params.id}} }`,
-            method: 'GET'
+            method
         }
 
-        const collection: RuntimeRequestCollection = {
-            [requestBody.path]: requestBody
+        const collection: MethodBasedRuntimeRequestCollection = {
+            [requestBody.method]: { [requestBody.path]: requestBody }
         };
         const id = 42;
 
         const app = appFactory(collection);
 
-        const response = await request(app)
-            .get(`/test/${id}`)
+        const response = await request(app)[method.toLocaleLowerCase()](`/test/${id}`)
             .expect(200)
             .expect('Content-Type', /json/);
 
         expect(response.body).toEqual({ id })
     });
 });
-
-describe('POST /*', () => {
-    test('should render JSON hbs template', async () => {
-        const requestBody: RuntimeRequestBody = {
-            path: '/test/:id',
-            body: `{"id": {{params.id}}, "item": "{{body.item}}" }`,
-            method: 'POST'
-        }
-
-        const collection: RuntimeRequestCollection = {
-            [requestBody.path]: requestBody
-        };
-        const id = 42;
-        const body = { item: "yes" }
-
-        const app = appFactory(collection);
-
-        const response = await request(app)
-            .post(`/test/${id}`)
-            .send(body)
-            .expect(200)
-            .expect('Content-Type', /json/);
-
-        expect(response.body).toEqual({ ...body, id })
-    });
-})
 
 describe('isMethodBasedRuntimeRequestCollection', () => {
     test('should be true', () => {
