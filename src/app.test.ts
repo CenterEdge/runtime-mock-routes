@@ -1,5 +1,5 @@
-import request from 'supertest'
-import { SupportedMethodsColection, appFactory, isMethodBasedRuntimeRequestCollection, MethodBasedRuntimeRequestCollection, RuntimeRequestBody, RuntimeRequestCollection } from './app'
+import request from 'supertest';
+import { appFactory, isMethodBasedRuntimeRequestCollection, MethodBasedRuntimeRequestCollection, RuntimeRequestBody, SupportedMethodsColection } from './app';
 
 describe('appFactory', () => {
     test('Creates app with no seed', () => {
