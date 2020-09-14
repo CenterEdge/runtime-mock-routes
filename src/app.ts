@@ -37,6 +37,7 @@ export const isSupportedMethod = (obj: any): obj is SupportedMethod => Supported
 export interface RuntimeRequestBody {
     path: string;
     body: any;
+    method: SupportedMethod;
     status?: number;
 }
 
@@ -44,6 +45,7 @@ export const isRuntimeRequestBody = (obj: any): obj is RuntimeRequestBody => {
     return typeof obj.path === 'string'
         && obj.hasOwnProperty('body')
         && (obj.status === undefined || !isNaN(Number(obj.status)))
+        && isSupportedMethod(obj.method)
 }
 
 export interface RuntimeRequestCollection {

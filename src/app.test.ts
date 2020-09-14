@@ -16,7 +16,8 @@ describe('appFactory', () => {
         const seed: RuntimeRequestCollection = {
             "/test": {
                 path: "/test",
-                body: { test: true }
+                body: { test: true },
+                method: 'GET'
             }
         }
         const app = appFactory(seed);
@@ -28,13 +29,15 @@ describe('appFactory', () => {
         const seed: RuntimeRequestCollection = {
             "/test": {
                 path: "/test",
-                body: { test: true }
+                body: { test: true },
+                method: 'GET'
             }
         }
         const semiSeed: RuntimeRequestCollection = {
             "/test": {
                 path: "/test1",
-                body: { test: true }
+                body: { test: true },
+                method: 'GET'
             }
         }
         const app = appFactory(semiSeed);
@@ -58,7 +61,8 @@ describe('GET /', () => {
     const seeded: RuntimeRequestCollection = {
         "/test": {
             path: "/test",
-            body: { test: true }
+            body: { test: true },
+            method: 'GET'
         }
     }
     test.each([['empty', empty], ['seeded', seeded]])('should get current collection - %s', async (_, seed) => {
@@ -76,7 +80,8 @@ describe('POST /', () => {
         const app = appFactory();
         const reqeustBody: RuntimeRequestBody = {
             path: '/test',
-            body: { hello: 'world' }
+            body: { hello: 'world' },
+            method: 'POST'
         };
         await request(app)
             .post('/')
@@ -105,7 +110,8 @@ describe('DELETE /?path=<path>', () => {
     test('should remove an existing path', async () => {
         const body: RuntimeRequestBody = {
             path: '/test',
-            body: {}
+            body: {},
+            method: 'GET'
         };
         const collection: RuntimeRequestCollection = {
             [body.path]: body
@@ -125,7 +131,8 @@ describe('DELETE /?path=<path>', () => {
     test('should return 204 when nothing needs to be removed', async () => {
         const body: RuntimeRequestBody = {
             path: '/test',
-            body: {}
+            body: {},
+            method: 'GET'
         };
         const collection: RuntimeRequestCollection = {
 
@@ -147,7 +154,8 @@ describe('GET /*', () => {
     test('should render JSON hbs template', async () => {
         const requestBody: RuntimeRequestBody = {
             path: '/test/:id',
-            body: `{"id": {{params.id}} }`
+            body: `{"id": {{params.id}} }`,
+            method: 'GET'
         }
 
         const collection: RuntimeRequestCollection = {
@@ -170,7 +178,8 @@ describe('POST /*', () => {
     test('should render JSON hbs template', async () => {
         const requestBody: RuntimeRequestBody = {
             path: '/test/:id',
-            body: `{"id": {{params.id}}, "item": "{{body.item}}" }`
+            body: `{"id": {{params.id}}, "item": "{{body.item}}" }`,
+            method: 'POST'
         }
 
         const collection: RuntimeRequestCollection = {
