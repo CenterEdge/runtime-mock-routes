@@ -42,10 +42,12 @@ export interface RuntimeRequestBody {
 }
 
 export const isRuntimeRequestBody = (obj: any): obj is RuntimeRequestBody => {
-    return typeof obj.path === 'string'
-        && obj.hasOwnProperty('body')
-        && (obj.status === undefined || !isNaN(Number(obj.status)))
-        && isSupportedMethod(obj.method)
+    try {
+        return typeof obj.path === 'string'
+            && obj.hasOwnProperty('body')
+            && (obj.status === undefined || !isNaN(Number(obj.status)))
+            && isSupportedMethod(obj.method)
+    } catch (_) { return false; }
 }
 
 export interface RuntimeRequestCollection {
@@ -53,10 +55,21 @@ export interface RuntimeRequestCollection {
 }
 
 export const isRuntimeRequestCollection = (obj: any): obj is RuntimeRequestCollection => {
-    return !Object.keys(obj).some(k => !isRuntimeRequestBody(obj[k]))
+    try { return !Object.keys(obj).some(k => !isRuntimeRequestBody(obj[k])) }
+    catch (_) {
+        return false
+    }
 }
 
 export type MethodBasedRuntimeRequestCollection = Partial<Record<SupportedMethod, RuntimeRequestCollection>>;
+
+export const isMethodBasedRuntimeRequestCollection = (obj: any): obj is MethodBasedRuntimeRequestCollection => {
+    try {
+        return !Object.keys(obj).some(k => !(isSupportedMethod(k) && isRuntimeRequestCollection(obj[k])))
+    } catch (_) {
+        return false
+    }
+}
 
 export const appFactory = (runtimeCollection?: RuntimeRequestCollection) => {
     let runtimeRequestCollection: RuntimeRequestCollection = runtimeCollection || {};

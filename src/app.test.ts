@@ -1,5 +1,5 @@
 import request from 'supertest'
-import { appFactory, RuntimeRequestBody, RuntimeRequestCollection } from './app'
+import { appFactory, isMethodBasedRuntimeRequestCollection, MethodBasedRuntimeRequestCollection, RuntimeRequestBody, RuntimeRequestCollection } from './app'
 
 describe('appFactory', () => {
     test('Creates app with no seed', () => {
@@ -199,3 +199,33 @@ describe('POST /*', () => {
         expect(response.body).toEqual({ ...body, id })
     });
 })
+
+describe('isMethodBasedRuntimeRequestCollection', () => {
+    test('should be true', () => {
+        const obj: MethodBasedRuntimeRequestCollection = {
+            GET: {
+                '/test': {
+                    path: '/test',
+                    method: 'GET',
+                    body: {},
+                    status: 200
+                }
+            }
+        };
+        expect(isMethodBasedRuntimeRequestCollection(obj)).toBeTruthy();
+    });
+
+    test('should be false', () => {
+        const obj = {
+            GETter: {
+                '/test': {
+                    path: '/test',
+                    method: 'GET',
+                    body: {},
+                    status: 200
+                }
+            }
+        };
+        expect(isMethodBasedRuntimeRequestCollection(obj)).toBeFalsy();
+    });
+});
