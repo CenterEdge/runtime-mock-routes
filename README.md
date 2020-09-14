@@ -7,7 +7,7 @@ Runtime-Mock-Routes is a nodejs application for defining parameterized route and
 Use the package manager [npm](https://www.npmjs.com/) or [yarn](https://yarnpkg.com/) to install Runtime-Mock-Routes.
 
 ```bash
-npm install -g runtime-mock-routes
+npm install -g @centeredgesoft/runtime-mock-routes
 ```
 
 ## Usage
