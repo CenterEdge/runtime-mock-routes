@@ -6,6 +6,7 @@ import faker from 'faker';
 import createMatcher from 'feather-route-matcher';
 import Handlebars from 'handlebars';
 import { cloneDeep, get } from 'lodash';
+import sortKeys from 'sort-keys';
 
 const chance = new Chance();
 
@@ -62,7 +63,7 @@ export const appFactory = (runtimeCollection?: RuntimeRequestCollection) => {
     app.use(cors());
     app.use(bodyParser.json());
 
-    app.get('/', (_req, res) => res.send(runtimeRequestCollection));
+    app.get('/', (_req, res) => res.send(sortKeys(runtimeRequestCollection, { deep: true })));
 
     app.post('/', (req, res) => {
         const { body } = req;
