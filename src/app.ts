@@ -10,6 +10,12 @@ import sortKeys from 'sort-keys';
 
 const chance = new Chance();
 
+type SupportedMethodsType = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
+const SupportedMethodsColection: SupportedMethodsType = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
+type SupportedMethod = SupportedMethodsType[number];
+
+const isSupportedMethod = (obj: any): obj is SupportedMethod => SupportedMethodsColection.includes(obj);
+
 Handlebars.registerHelper('faker', (funcName: string, ...rest: any[]) => {
     try {
         const func = get(faker, funcName, () => '');
@@ -34,7 +40,7 @@ export interface RuntimeRequestBody {
     status?: number;
 }
 
-const isRuntimeRequestBody = (obj: any): obj is RuntimeRequestBody => {
+export const isRuntimeRequestBody = (obj: any): obj is RuntimeRequestBody => {
     return typeof obj.path === 'string'
         && obj.hasOwnProperty('body')
         && (obj.status === undefined || !isNaN(Number(obj.status)))
@@ -44,7 +50,7 @@ export interface RuntimeRequestCollection {
     [path: string]: RuntimeRequestBody
 }
 
-const isRuntimeRequestCollection = (obj: any): obj is RuntimeRequestCollection => {
+export const isRuntimeRequestCollection = (obj: any): obj is RuntimeRequestCollection => {
     return !Object.keys(obj).some(k => !isRuntimeRequestBody(obj[k]))
 }
 
