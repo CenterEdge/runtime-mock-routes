@@ -16,17 +16,38 @@ npm install -g runtime-mock-routes
 runtime-mock-routes -p 8080 -s ./seed.json
 ```
 
-All command line options are optional. If a seed json file is specified, it must match the `RuntimeRequestCollection` interface.
+All command line options are optional. If a seed json file is specified, it must match the `MethodBasedRuntimeRequestCollection` type.
 
 ```typescript
+type SupportedMethodsType = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
+const SupportedMethodsColection: SupportedMethodsType = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
+type SupportedMethod = SupportedMethodsType[number];
+
 interface RuntimeRequestBody {
     path: string;
+    method: SupportedMethod;
     body: any;
     status?: number;
 }
 
 interface RuntimeRequestCollection {
     [path: string]: RuntimeRequestBody
+}
+
+type MethodBasedRuntimeRequestCollection = Partial<Record<SupportedMethod, RuntimeRequestCollection>>;
+```
+
+For example:
+```JSON
+{
+    "GET":{
+        "/test": {
+            "path": "/test",
+            "method": "GET",
+            "body": {"foo": "bar"},
+            "status": 200
+        }
+    }
 }
 ```
 
@@ -53,9 +74,8 @@ If the rendered template is valid JSON, the response will be of type `applicatio
 ### Routes
 * `GET /` returns all of the currently defined routes 
 * `POST /` Takes a `RuntimeRequestBody` and adds it to the collection or updates the existing entry if it exists.
-* `GET /*` The result of retrieving an entry in the collection, 404 otherwise
-* `POST /*` The result of retrieving an entry in the collection, 404 otherwise
-* `DELETE /?path=<path>` Deletes items from the collection
+* `[GET,POST,PUT,PATCH,DELETE] /*` The result of retrieving an entry in the collection, 404 otherwise
+* `DELETE /?path=<path>&method=<method>` Deletes items from the collection
 
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
