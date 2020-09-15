@@ -16,36 +16,43 @@ npm install -g @centeredgesoft/runtime-mock-routes
 runtime-mock-routes -p 8080 -s ./seed.json
 ```
 
-All command line options are optional. If a seed json file is specified, it must match the `MethodBasedRuntimeRequestCollection` type.
+All command line options are optional. If a seed file is supplied, it must be one of the following
+* a json file that matches a `RuntimeRequestCollection`
+* a js file with a default export of type `RuntimeRequestCollection`
+* a js file with a default export of a function that returns a `RuntimeRequestCollection`
 
 ```typescript
 type SupportedMethodsType = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
 const SupportedMethodsColection: SupportedMethodsType = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
 type SupportedMethod = SupportedMethodsType[number];
 
-interface RuntimeRequestBody {
-    path: string;
-    method: SupportedMethod;
+export interface RuntimeRequestMethodBody {
     body: any;
     status?: number;
 }
 
-interface RuntimeRequestCollection {
-    [path: string]: RuntimeRequestBody
+export type RuntimeRequestMethodBodyCollection = Partial<Record<SupportedMethod, RuntimeRequestMethodBody>>;
+
+export interface RuntimeRequestBody {
+    path: string;
+    methods: RuntimeRequestMethodBodyCollection;
 }
 
-type MethodBasedRuntimeRequestCollection = Partial<Record<SupportedMethod, RuntimeRequestCollection>>;
+export interface RuntimeRequestCollection {
+    [path: string]: RuntimeRequestBody;
+}
 ```
 
 For example:
 ```JSON
 {
-    "GET":{
-        "/test": {
-            "path": "/test",
-            "method": "GET",
-            "body": {"foo": "bar"},
-            "status": 200
+    "/test":{
+        "path":"/test",
+        "methods":{
+            "GET": {
+                "body": {},
+                "status": 200
+            }
         }
     }
 }
@@ -61,7 +68,7 @@ RUNTIME_MOCK_ROUTES_FILE_PATH=/seed.json
 Route parameters are specified in path via a colon followed by the parameter name.
 `'/users/:id'`
 
-Template strings that are compatible with [handlebars](https://handlebarsjs.com/) can be used for the `body` property of a `RuntimeRequestBody`. The application will use path and query params as data for the tempalte. This application makes use of [faker](https://www.npmjs.com/package/faker) and [chance](https://www.npmjs.com/package/chance) as Handlebars Helpers.
+Template strings that are compatible with [handlebars](https://handlebarsjs.com/) can be used for the `body` property of a `RuntimeRequestMethodBody`. The application will use path and query params as data for the tempalte. This application makes use of [faker](https://www.npmjs.com/package/faker) and [chance](https://www.npmjs.com/package/chance) as Handlebars Helpers.
 
 ```
 {{params.<path-param-name>}} {{query.<query-param-name>}} 
