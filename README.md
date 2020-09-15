@@ -82,7 +82,7 @@ If the rendered template is valid JSON, the response will be of type `applicatio
 * `GET /` returns all of the currently defined routes 
 * `POST /` Takes a `RuntimeRequestBody` and adds it to the collection or updates the existing entry if it exists.
 * `[GET,POST,PUT,PATCH,DELETE] /*` The result of retrieving an entry in the collection, 404 otherwise
-* `DELETE /?path=<path>&method=<method>` Deletes items from the collection
+* `DELETE /?path=<path>` Deletes items from the collection
 
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
