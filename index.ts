@@ -1,18 +1,19 @@
 #!/usr/bin/env node
 import { program } from 'commander';
-import { readJsonSync } from 'fs-extra';
 import { resolve } from 'path';
 import { appFactory, MethodBasedRuntimeRequestCollection } from './src/app';
 
 
-program.version("1.0.0")
+program.version("1.0.1")
     .option("-p, --port <port>", "Port to run the server one", process.env.RUNTIME_MOCK_ROUTES_PORT || "8080")
     .option("-s, --seed <filePath>", "File path to seed the application", process.env.RUNTIME_MOCK_ROUTES_FILE_PATH)
 
 program.parse(process.argv);
 let initialRequests: MethodBasedRuntimeRequestCollection = {};
 if (program.seed) {
-    initialRequests = readJsonSync(resolve(program.seed))
+    const filePath = resolve(program.seed);
+    const funcOrJson = require(filePath);
+    initialRequests = typeof funcOrJson === 'function' ? funcOrJson() : funcOrJson;
 }
 
 const app = appFactory(initialRequests);
