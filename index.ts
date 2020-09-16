@@ -10,7 +10,7 @@ enum AppVersion {
     v2 = 'v2'
 }
 
-program.version("2.0.0")
+program.version("2.0.1")
     .option("-p, --port <port>", "Port to run the server one", process.env.RUNTIME_MOCK_ROUTES_PORT || "8080")
     .option("-s, --seed <filePath>", "File path to seed the application", process.env.RUNTIME_MOCK_ROUTES_FILE_PATH)
     .option("-a, --appVersion <appVersion>", "App Version to use", AppVersion.v2)
