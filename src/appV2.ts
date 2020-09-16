@@ -151,7 +151,7 @@ export const appFactory = (runtimeCollection?: RuntimeRequestCollection) => {
 
             const method: RuntimeRequestMethodBody = reqInfo.methods[req.method];
             if (!method) {
-                return res.staus(404).send()
+                return res.status(404).send()
             }
 
             const tokenParams = {
