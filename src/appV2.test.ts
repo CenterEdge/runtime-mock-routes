@@ -128,7 +128,7 @@ describe('POST /', () => {
 describe('PUT', () => {
     test('should accept a valid RuntimeRequestCollection', async () => {
         const app = appFactory();
-        const reqeustBody: RuntimeRequestBody = {
+        const requestBody: RuntimeRequestBody = {
             path: '/test',
             methods: {
                 POST: {
@@ -137,7 +137,7 @@ describe('PUT', () => {
             }
         };
         const collection: RuntimeRequestCollection = {
-            [reqeustBody.path]: reqeustBody
+            [requestBody.path]: requestBody
         }
         await request(app)
             .put('/')
