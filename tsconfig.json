@@ -4,11 +4,13 @@
         "module": "commonjs",
         "rootDir": "./",
         "outDir": "./build",
+        "declaration": true,
         "esModuleInterop": true,
         "strict": false,
     },
     "exclude": [
         "**/*.spec.ts",
-        "**/*.test.ts"
+        "**/*.test.ts",
+        "./build/**/*"
     ]
 }
