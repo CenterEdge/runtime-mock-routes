@@ -81,6 +81,7 @@ If the rendered template is valid JSON, the response will be of type `applicatio
 ### Routes
 * `GET /` returns all of the currently defined routes 
 * `POST /` Takes a `RuntimeRequestBody` and adds it to the collection or updates the existing entry if it exists.
+* `PUT /` Takes a `RuntimeRequestCollection` and replaces the current collection.
 * `[GET,POST,PUT,PATCH,DELETE] /*` The result of retrieving an entry in the collection, 404 otherwise
 * `DELETE /?path=<path>` Deletes items from the collection
 

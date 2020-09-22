@@ -119,7 +119,32 @@ export const appFactory = (runtimeCollection?: RuntimeRequestCollection) => {
             return res.status(204).send();
         }
         return res.status(400).send();
-    })
+    });
+
+    app.put('/', (req, res) => { 
+        const { body } = req;
+        if(!isRuntimeRequestCollection(body)){
+            return res.status(400).send('BAD_REQUEST_BODY')
+        }
+        
+        const cleanBody = Object.keys(body).reduce(
+            (acc, curr) => {
+                const fixedPath = `/${curr}`.replace(/\/\//g, '/');
+                const newBody = {
+                    ...body[curr],
+                    path: fixedPath
+                }
+                return {
+                    ...acc,
+                    [fixedPath]: newBody
+                };
+            },
+            {} as RuntimeRequestCollection
+        );
+
+        runtimeRequestCollection = cleanBody;
+        return res.status(204).send();
+    });
 
     app.delete('/', (req, res) => {
         let { path } = req.query;

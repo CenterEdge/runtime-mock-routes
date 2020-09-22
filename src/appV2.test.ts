@@ -125,6 +125,46 @@ describe('POST /', () => {
     });
 });
 
+describe('PUT', () => {
+    test('should accept a valid RuntimeRequestCollection', async () => {
+        const app = appFactory();
+        const reqeustBody: RuntimeRequestBody = {
+            path: '/test',
+            methods: {
+                POST: {
+                    body: { hello: 'world' }
+                }
+            }
+        };
+        const collection: RuntimeRequestCollection = {
+            [reqeustBody.path]: reqeustBody
+        }
+        await request(app)
+            .put('/')
+            .send(collection)
+            .expect(204);
+
+        expect(app["runtimeRequestCollection"]).toEqual(collection);
+    });
+
+    test('should deny an invalid RuntimeRequestCollection', async () => {
+        const app = appFactory();
+        const reqeustBody = {
+            path: '/test',
+        };
+        const collection = {
+            [reqeustBody.path]: reqeustBody
+        }
+        await request(app)
+            .put('/')
+            .send(collection)
+            .expect(400)
+            .catch(() => { });
+    });
+
+
+});
+
 describe('DELETE /?path=<path>', () => {
     test('should remove an existing path', async () => {
         const body: RuntimeRequestBody = {
