@@ -1,7 +1,7 @@
 import bodyParser from 'body-parser';
 import Chance from 'chance';
 import cors from 'cors';
-import express from 'express';
+import express, { Request, Response } from 'express';
 import faker from 'faker';
 import createMatcher from 'feather-route-matcher';
 import Handlebars from 'handlebars';
@@ -35,8 +35,9 @@ export type SupportedMethod = SupportedMethodsType[number];
 export const isSupportedMethod = (obj: any): obj is SupportedMethod => SupportedMethodsColection.includes(obj);
 
 export interface RuntimeRequestMethodBody {
-    body: any,
-    status?: number
+    body: any;
+    status?: number;
+    headers?: Record<string, string>;
 }
 
 export const isRuntimeRequestMethodBody = (obj: any): obj is RuntimeRequestMethodBody => {
@@ -121,12 +122,12 @@ export const appFactory = (runtimeCollection?: RuntimeRequestCollection) => {
         return res.status(400).send();
     });
 
-    app.put('/', (req, res) => { 
+    app.put('/', (req, res) => {
         const { body } = req;
-        if(!isRuntimeRequestCollection(body)){
+        if (!isRuntimeRequestCollection(body)) {
             return res.status(400).send('BAD_REQUEST_BODY')
         }
-        
+
         const cleanBody = Object.keys(body).reduce(
             (acc, curr) => {
                 const fixedPath = `/${curr}`.replace(/\/\//g, '/');
@@ -166,7 +167,7 @@ export const appFactory = (runtimeCollection?: RuntimeRequestCollection) => {
         return res.status(204).send();
     });
 
-    const catchAllHandler = (req, res) => {
+    const catchAllHandler = (req: Request, res: Response) => {
         const matcher = createMatcher(runtimeRequestCollection);
         const routeMatch = matcher(req.path);
 
@@ -182,11 +183,23 @@ export const appFactory = (runtimeCollection?: RuntimeRequestCollection) => {
             const tokenParams = {
                 query: req.query,
                 params,
-                body: req.body
+                body: req.body,
+                headers: req.headers
             }
 
             if (method.status) {
                 res.status(method.status);
+            }
+
+            if (method.headers) {
+                const processedHeaders = Object.keys(method.headers).reduce(
+                    (acc, curr) => ({
+                        ...acc,
+                        [curr]: Handlebars.compile(method.headers[curr])(tokenParams)
+                    }),
+                    {} as Record<string, string>
+                );
+                res.set(processedHeaders);
             }
 
             const { body } = method;

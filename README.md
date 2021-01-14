@@ -29,6 +29,7 @@ type SupportedMethod = SupportedMethodsType[number];
 export interface RuntimeRequestMethodBody {
     body: any;
     status?: number;
+    headers?: Record<string, string>;
 }
 
 export type RuntimeRequestMethodBodyCollection = Partial<Record<SupportedMethod, RuntimeRequestMethodBody>>;
@@ -51,7 +52,10 @@ For example:
         "methods":{
             "GET": {
                 "body": {},
-                "status": 200
+                "status": 200,
+                "headers": {
+                    "X-Custom-Header": "yes"
+                }
             }
         }
     }
@@ -73,6 +77,7 @@ Template strings that are compatible with [handlebars](https://handlebarsjs.com/
 ```
 {{params.<path-param-name>}} {{query.<query-param-name>}} 
 {{body.<post-body-property>}}
+{{headers.<header-property-name>}}
 {{ faker "lorem.words" 5}} {{ chance "guid"}}
 ```
 
