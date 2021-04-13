@@ -251,9 +251,9 @@ describe('Body as Function', () => {
                     GET: {
                         body: function(rp: RequestParameters) {
                             if(rp.query.id == "2") {
-                                return "id was 2";
+                                return {id: 2};
                             } else {
-                                return "id was not 2";
+                                return {id: 3};
                             }
                         },
                         status: 200
@@ -267,11 +267,11 @@ describe('Body as Function', () => {
 
         var response = await request(app).get('/test?id=2');
 
-        expect(response.text).toEqual("id was 2");
+        expect(response.body).toEqual({id: 2});
 
         var secondResponse = await request(app).get('/test?id=3');
 
-        expect(secondResponse.text).toEqual("id was not 2");
+        expect(secondResponse.body).toEqual({id: 3});
     })
 });
 
