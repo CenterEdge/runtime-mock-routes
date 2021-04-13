@@ -40,6 +40,13 @@ export interface RuntimeRequestMethodBody {
     headers?: Record<string, string>;
 }
 
+export interface RequestParameters {
+    query: any,
+    params: any,
+    body: any,
+    headers: any
+}
+
 export const isRuntimeRequestMethodBody = (obj: any): obj is RuntimeRequestMethodBody => {
     try {
         return !!obj.body && (!obj.status || !isNaN(Number(obj.status)))
@@ -202,7 +209,12 @@ export const appFactory = (runtimeCollection?: RuntimeRequestCollection) => {
                 res.set(processedHeaders);
             }
 
-            const { body } = method;
+            let { body } = method;
+
+            // if body is a function, execute and then process the response
+            if (typeof body === 'function') {
+                body = body(tokenParams);
+            }
 
             if (typeof body !== 'string') {
                 return res.send(body);

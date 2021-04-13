@@ -1,5 +1,5 @@
 import request from 'supertest';
-import { appFactory, isRuntimeRequestCollection, RuntimeRequestBody, RuntimeRequestCollection, SupportedMethodsColection } from './appV2';
+import { appFactory, isRuntimeRequestCollection, RuntimeRequestBody, RuntimeRequestCollection, SupportedMethodsColection, RequestParameters } from './appV2';
 
 describe('appFactory', () => {
     test('Creates app with no seed', () => {
@@ -240,6 +240,39 @@ describe('METHOD /*', () => {
 
         expect(response.body).toEqual({ id })
     });
+});
+
+describe('Body as Function', () => {
+    test('executes the method for the result', async () => {
+        const seed: RuntimeRequestCollection = {
+            "/test": {
+                path: "/test",
+                methods: {
+                    GET: {
+                        body: function(rp: RequestParameters) {
+                            if(rp.query.id == "2") {
+                                return "id was 2";
+                            } else {
+                                return "id was not 2";
+                            }
+                        },
+                        status: 200
+                    }
+                }
+            }
+        }
+
+        const app = appFactory(seed);
+        expect(app).toBeDefined();
+
+        var response = await request(app).get('/test?id=2');
+
+        expect(response.text).toEqual("id was 2");
+
+        var secondResponse = await request(app).get('/test?id=3');
+
+        expect(secondResponse.text).toEqual("id was not 2");
+    })
 });
 
 describe('isRuntimeRequestMethodBodyCollection', () => {
