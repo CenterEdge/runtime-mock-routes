@@ -83,6 +83,8 @@ Template strings that are compatible with [handlebars](https://handlebarsjs.com/
 
 If the rendered template is valid JSON, the response will be of type `application/json`.
 
+Also, be aware that instead of a direct JSON response, the body can also be a function that takes in a `RequestParameters` and returns a body response. The response will still be processed through handlebars.
+
 ### Routes
 * `GET /` returns all of the currently defined routes 
 * `POST /` Takes a `RuntimeRequestBody` and adds it to the collection or updates the existing entry if it exists.
