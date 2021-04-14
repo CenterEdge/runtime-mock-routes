@@ -1,4 +1,3 @@
-import bodyParser from 'body-parser';
 import Chance from 'chance';
 import cors from 'cors';
 import express, { Request, Response } from 'express';
@@ -110,7 +109,7 @@ export const appFactory = (runtimeCollection?: RuntimeRequestCollection) => {
     const app = express();
 
     app.use(cors());
-    app.use(bodyParser.json());
+    app.use(express.json());
 
     app.get('/', (_req, res) => res.send(sortKeys(runtimeRequestCollection, { deep: true })));
 

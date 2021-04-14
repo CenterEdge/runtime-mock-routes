@@ -318,8 +318,6 @@ describe('Request Element is Simple Type', () => {
                             .set('Content-type', 'application/json')
                             .send("test");
 
-        console.log(response);
-
         expect(response.body).toEqual(true);
     })
 });
