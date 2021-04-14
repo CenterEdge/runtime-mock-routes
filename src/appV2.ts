@@ -109,7 +109,9 @@ export const appFactory = (runtimeCollection?: RuntimeRequestCollection) => {
     const app = express();
 
     app.use(cors());
-    app.use(express.json());
+    app.use(express.json({
+        strict: false
+    }));
 
     app.get('/', (_req, res) => res.send(sortKeys(runtimeRequestCollection, { deep: true })));
 
