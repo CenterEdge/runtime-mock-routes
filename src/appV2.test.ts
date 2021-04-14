@@ -275,6 +275,55 @@ describe('Body as Function', () => {
     })
 });
 
+describe('Request Element is Simple Type', () => {
+    test('Send in string', async () => {
+        const seed: RuntimeRequestCollection = {
+            "/test": {
+                path: "/test",
+                methods: {
+                    POST: {
+                        body: JSON.stringify(true),
+                        status: 200
+                    }
+                }
+            }
+        }
+
+        const app = appFactory(seed);
+        expect(app).toBeDefined();
+
+        var response = await request(app).post('/test?id=2').send("test");
+
+        expect(response.body).toEqual(true);
+    })
+
+    test('Send in string as JSON', async () => {
+        const seed: RuntimeRequestCollection = {
+            "/test": {
+                path: "/test",
+                methods: {
+                    POST: {
+                        body: JSON.stringify(true),
+                        status: 200
+                    }
+                }
+            }
+        }
+
+        const app = appFactory(seed);
+        expect(app).toBeDefined();
+
+        var response = await request(app)
+                            .post('/test?id=2')
+                            .set('Content-type', 'application/json')
+                            .send("test");
+
+        console.log(response);
+
+        expect(response.body).toEqual(true);
+    })
+});
+
 describe('isRuntimeRequestMethodBodyCollection', () => {
     test('is true for valid object', () => {
         const seed: RuntimeRequestCollection = {
