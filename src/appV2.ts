@@ -35,7 +35,7 @@ export const isSupportedMethod = (obj: any): obj is SupportedMethod => Supported
 
 export interface RuntimeRequestMethodBody {
     body: any;
-    status?: number;
+    status?: number | ((...args: any[])=>number);
     headers?: Record<string, string>;
 }
 
@@ -196,7 +196,11 @@ export const appFactory = (runtimeCollection?: RuntimeRequestCollection) => {
             }
 
             if (method.status) {
-                res.status(method.status);
+                const status = typeof method.status === 'function'
+                 ? method.status(tokenParams)
+                 : method.status
+                
+                res.status(status);
             }
 
             if (method.headers) {
