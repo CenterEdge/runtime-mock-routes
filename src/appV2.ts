@@ -35,7 +35,7 @@ export const isSupportedMethod = (obj: any): obj is SupportedMethod => Supported
 
 export interface RuntimeRequestMethodBody {
     body: any;
-    status?: number | ((...args: any[])=>number);
+    status?: any;
     headers?: Record<string, string>;
 }
 
