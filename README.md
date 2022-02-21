@@ -28,7 +28,7 @@ type SupportedMethod = SupportedMethodsType[number];
 
 export interface RuntimeRequestMethodBody {
     body: any;
-    status?: number | ((...args : any[])=>number);
+    status?: any;
     headers?: Record<string, string>;
 }
 
