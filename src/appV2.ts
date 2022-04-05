@@ -48,7 +48,7 @@ export interface RequestParameters {
 
 export const isRuntimeRequestMethodBody = (obj: any): obj is RuntimeRequestMethodBody => {
     try {
-        return !!obj.body && (!obj.status || !isNaN(Number(obj.status)))
+        return !!obj.body && (!obj.status || typeof obj.status === 'function' || !isNaN(Number(obj.status)))
     } catch (_) {
         return false;
     }
