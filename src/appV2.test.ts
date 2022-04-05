@@ -1,5 +1,5 @@
 import request from 'supertest';
-import { appFactory, isRuntimeRequestCollection, RuntimeRequestBody, RuntimeRequestCollection, SupportedMethodsColection, RequestParameters } from './appV2';
+import { appFactory, isRuntimeRequestCollection, RuntimeRequestBody, RuntimeRequestCollection, SupportedMethodsColection, RequestParameters, RuntimeRequestMethodBody, isRuntimeRequestMethodBody } from './appV2';
 
 describe('appFactory', () => {
     test('Creates app with no seed', () => {
@@ -317,5 +317,56 @@ describe('isRuntimeRequestMethodBodyCollection', () => {
 
         const valid = isRuntimeRequestCollection(seed);
         expect(valid).toBeTruthy();
+    })
+})
+
+describe('Status as a function', () => {
+    test('is true for status that is function', () => {
+        const seed: RuntimeRequestMethodBody = {
+            body: "test",
+            status: () => {
+                return 200;
+            }
+        };
+
+        const valid = isRuntimeRequestMethodBody(seed);
+        expect(valid).toBeTruthy();
+    })
+
+    test('Executes body and status functions', async () => {
+        const seed: RuntimeRequestCollection = {
+            "/test": {
+                path: "/test",
+                methods: {
+                    GET: {
+                        body: function(rp: RequestParameters) {
+                            if(rp.query.id == "2") {
+                                return {id: 2};
+                            } else {
+                                return {id: 3};
+                            }
+                        },
+                        status: function(rp: RequestParameters) {
+                            if(rp.query.id == "2") {
+                                return 200;
+                            } else {
+                                return 400;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        const app = appFactory(seed);
+        expect(app).toBeDefined();
+
+        var response = await request(app).get('/test?id=2');
+        expect(response.body).toEqual({id: 2});
+        expect(response.status).toEqual(200);
+
+        var secondResponse = await request(app).get('/test?id=3');
+        expect(secondResponse.body).toEqual({id: 3});
+        expect(secondResponse.status).toEqual(400);
     })
 })
