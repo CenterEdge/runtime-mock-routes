@@ -370,3 +370,48 @@ describe('Status as a function', () => {
         expect(secondResponse.status).toEqual(400);
     })
 })
+
+describe('Headers as a function', () => {
+    test('is true for headers that are a function', () => {
+        const seed: RuntimeRequestMethodBody = {
+            body: "test",
+            status: 200,
+            headers: () => {
+                return {'test-header': 5}
+            }
+        };
+
+        const valid = isRuntimeRequestMethodBody(seed);
+        expect(valid).toBeTruthy();
+    })
+
+    test('Executes header functions', async () => {
+        const seed: RuntimeRequestCollection = {
+            "/test": {
+                path: "/test",
+                methods: {
+                    GET: {
+                        body: {id: 1},
+                        status: 200,
+                        headers: function(rp: RequestParameters) {
+                            if(rp.query.id == "2") {
+                                return {'test-header': '2'};
+                            } else {
+                                return {'test-header': '3'}
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        const app = appFactory(seed);
+        expect(app).toBeDefined();
+
+        var response = await request(app).get('/test?id=2');
+        expect(response.headers['test-header']).toEqual('2');
+
+        var secondResponse = await request(app).get('/test?id=3');
+        expect(secondResponse.headers['test-header']).toEqual('3');
+    })
+})
