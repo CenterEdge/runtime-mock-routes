@@ -36,7 +36,7 @@ export const isSupportedMethod = (obj: any): obj is SupportedMethod => Supported
 export interface RuntimeRequestMethodBody {
     body: any;
     status?: any;
-    headers?: Record<string, string>;
+    headers?: any;
 }
 
 export interface RequestParameters {
@@ -205,14 +205,18 @@ export const appFactory = (runtimeCollection?: RuntimeRequestCollection) => {
             }
 
             if (method.headers) {
-                const processedHeaders = Object.keys(method.headers).reduce(
-                    (acc, curr) => ({
-                        ...acc,
-                        [curr]: Handlebars.compile(method.headers[curr])(tokenParams)
-                    }),
-                    {} as Record<string, string>
-                );
-                res.set(processedHeaders);
+                if (typeof method.headers === 'function') {
+                    res.set(method.headers(tokenParams))
+                } else {
+                    const processedHeaders = Object.keys(method.headers).reduce(
+                        (acc, curr) => ({
+                            ...acc,
+                            [curr]: Handlebars.compile(method.headers[curr])(tokenParams)
+                        }),
+                        {} as Record<string, string>
+                    );
+                    res.set(processedHeaders);
+                }
             }
 
             let { body } = method;
