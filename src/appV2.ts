@@ -114,6 +114,22 @@ export const appFactory = (runtimeCollection?: RuntimeRequestCollection) => {
         type: ['application/json', 'application/*+json', 'text/json']
     }));
 
+    // log the request
+    app.use((req, res, next) => {
+        console.log(`Request: ${req.method} ${req.url}`);
+        console.log('Headers:', req.headers);
+        console.log('Body:', req.body);
+
+        // log the response
+        const originalSend = res.send;
+        res.send = function (body) {
+            console.log('Response:', body);
+            return originalSend.apply(this, arguments);
+        };
+
+        next();
+    });
+
     app.get('/', (_req, res) => res.send(sortKeys(runtimeRequestCollection, { deep: true })));
 
     app.post('/', (req, res) => {
