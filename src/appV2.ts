@@ -115,7 +115,7 @@ export const appFactory = (runtimeCollection?: RuntimeRequestCollection) => {
     }));
 
     // log the request
-    if (process.env.logMockRequests === 'true') {
+    if (process.env.LOG_MOCK_REQUESTS === 'true') {
         app.use((req, res, next) => {
             console.log(`Request: ${req.method} ${req.url}`);
             console.log('Headers:', req.headers);
