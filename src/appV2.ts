@@ -115,20 +115,22 @@ export const appFactory = (runtimeCollection?: RuntimeRequestCollection) => {
     }));
 
     // log the request
-    app.use((req, res, next) => {
-        console.log(`Request: ${req.method} ${req.url}`);
-        console.log('Headers:', req.headers);
-        console.log('Body:', req.body);
+    if (process.env.logMockRequests === 'true') {
+        app.use((req, res, next) => {
+            console.log(`Request: ${req.method} ${req.url}`);
+            console.log('Headers:', req.headers);
+            console.log('Body:', req.body);
 
-        // log the response
-        const originalSend = res.send;
-        res.send = function (body) {
-            console.log('Response:', body);
-            return originalSend.apply(this, arguments);
-        };
+            // log the response
+            const originalSend = res.send;
+            res.send = function (body) {
+                console.log('Response:', body);
+                return originalSend.apply(this, arguments);
+            };
 
-        next();
-    });
+            next();
+        });
+    }
 
     app.get('/', (_req, res) => res.send(sortKeys(runtimeRequestCollection, { deep: true })));
 
