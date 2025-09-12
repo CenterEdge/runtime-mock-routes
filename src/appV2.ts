@@ -37,6 +37,7 @@ export interface RuntimeRequestMethodBody {
     body: any;
     status?: any;
     headers?: any;
+    raw?: boolean;
 }
 
 export interface RequestParameters {
@@ -218,7 +219,7 @@ export const appFactory = (runtimeCollection?: RuntimeRequestCollection) => {
                 const status = typeof method.status === 'function'
                  ? method.status(tokenParams)
                  : method.status
-                
+
                 res.status(status);
             }
 
@@ -252,6 +253,10 @@ export const appFactory = (runtimeCollection?: RuntimeRequestCollection) => {
             const result = template(tokenParams)
 
             try {
+                 if (method.raw) {
+                    return res.send(result);
+                }
+
                 const jsonResult = JSON.parse(result);
                 return res.send(jsonResult);
             } catch (_) {
