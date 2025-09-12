@@ -275,6 +275,36 @@ describe('Body as Function', () => {
     })
 });
 
+describe('Body returns quoted JSON when sending raw', () => {
+    test('Return JSON stringified string with quotes', async () => {
+        const seed: RuntimeRequestCollection = {
+            "/test": {
+                path: "/test",
+                methods: {
+                    GET: {
+                        body: function(rp: RequestParameters) { return JSON.stringify(`"<p>Test</p>"`) },
+                        status: 200,
+                        headers: () => { return { 'Content-Type': 'application/json; charset=utf-8' } },
+                        raw: true
+                    }
+                }
+            }
+        }
+
+        const app = appFactory(seed);
+        expect(app).toBeDefined();
+
+        var response = await request(app).get('/test');
+
+        expect(response.body).toEqual(`"<p>Test</p>"`);
+        expect(response.body).toHaveLength(13)
+        expect(response.body[0]).toBe(`"`);
+        expect(response.body[1]).toBe(`<`);
+        expect(response.body[11]).toBe(`>`);
+        expect(response.body[12]).toBe(`"`);
+    })
+});
+
 describe('Request Body is Simple Type', () => {
     test('Send in string as JSON', async () => {
         const seed: RuntimeRequestCollection = {
