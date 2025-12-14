@@ -6,7 +6,8 @@
   "scripts": {
     "build": "tsc --project ./",
     "start": "nodemon -r dotenv/config index.ts",
-    "test": "jest"
+    "test": "jest",
+    "serve": "ts-node run.ts -s ./example/seed.js"
   },
   "bin": {
     "runtime-mock-routes": "./build/run.js"
@@ -23,6 +24,9 @@
   },
   "homepage": "https://github.com/CenterEdge/runtime-mock-routes#readme",
   "dependencies": {
+    "@opentelemetry/instrumentation-express": "^0.57.0",
+    "@opentelemetry/instrumentation-http": "^0.208.0",
+    "@opentelemetry/sdk-node": "^0.208.0",
     "chance": "^1.1.7",
     "commander": "^6.2.1",
     "cors": "^2.8.5",
