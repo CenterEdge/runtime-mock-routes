@@ -6,6 +6,7 @@ import createMatcher from 'feather-route-matcher';
 import Handlebars from 'handlebars';
 import { cloneDeep, get } from 'lodash';
 import sortKeys from 'sort-keys';
+import { logs, SeverityNumber } from '@opentelemetry/api-logs';
 
 const chance = new Chance();
 
@@ -117,15 +118,43 @@ export const appFactory = (runtimeCollection?: RuntimeRequestCollection) => {
 
     // log the request
     if (process.env.LOG_MOCK_REQUESTS === 'true') {
+        const logger = logs.getLogger('mock-requests-logger');
+
         app.use((req, res, next) => {
-            console.log(`Request: ${req.method} ${req.url}`);
-            console.log('Headers:', req.headers);
-            console.log('Body:', req.body);
+            // log the request
+            logger.emit({
+                severityNumber: SeverityNumber.INFO,
+                severityText: 'INFO',
+                body: `Request ${req.path}`,
+                attributes: {
+                    'http.headers': req.headers,
+                    'http.method': req.method,
+                    'http.url': req.url,
+                    'http.request_body': req.body,
+                }
+            });
 
             // log the response
             const originalSend = res.send;
+            let firstSend = true;
             res.send = function (body) {
-                console.log('Response:', body);
+                if (firstSend) {
+                    // For some reason send gets called twice per request, this ensures we only log once
+                    firstSend = false;
+
+                    logger.emit({
+                        severityNumber: SeverityNumber.INFO,
+                        severityText: 'INFO',
+                        body: `Response ${req.path}`,
+                        attributes: {
+                            'http.status_code': res.statusCode,
+                            'http.method': req.method,
+                            'http.url': req.url,
+                            'http.response_body': body,
+                        }
+                    });
+                }
+
                 return originalSend.apply(this, arguments);
             };
 
