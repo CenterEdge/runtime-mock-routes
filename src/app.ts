@@ -216,12 +216,12 @@ export const appFactory = (runtimeCollection?: MethodBasedRuntimeRequestCollecti
         return res.status(404).send();
     }
 
-    app.get('/*', catchAllHandler);
-    app.post('/*', catchAllHandler);
-    app.put('/*', catchAllHandler);
-    app.patch('/*', catchAllHandler);
-    app.delete('/*', catchAllHandler);
-
+    app.get(/\/.*/, catchAllHandler);
+    app.post(/\/.*/, catchAllHandler);
+    app.put(/\/.*/, catchAllHandler);
+    app.patch(/\/.*/, catchAllHandler);
+    app.delete(/\/.*/, catchAllHandler);
+    
     Object.defineProperty(app, 'runtimeRequestCollection', {
         get: () => {
             return cloneDeep(runtimeRequestCollection);

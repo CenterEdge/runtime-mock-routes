@@ -58,7 +58,7 @@ describe('appFactory', () => {
             }
         }
 
-        expect(() => appFactory(seed as any)).toThrowError('Intial requests JSON is invalid')
+        expect(() => appFactory(seed as any)).toThrow('Intial requests JSON is invalid')
     });
 });
 
