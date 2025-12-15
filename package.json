@@ -1,6 +1,6 @@
 {
   "name": "@centeredgesoft/runtime-mock-routes",
-  "version": "2.10.0",
+  "version": "2.10.1",
   "description": "",
   "main": "build/index.js",
   "scripts": {
