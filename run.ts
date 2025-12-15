@@ -2,9 +2,6 @@
 import { NodeSDK, logs } from '@opentelemetry/sdk-node';
 import { ExpressInstrumentation } from '@opentelemetry/instrumentation-express';
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
-import { diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api';
-
-diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.DEBUG);
 
 let logRecordProcessors: logs.LogRecordProcessor[] | undefined = undefined;
 if (!process.env.OTEL_EXPORTER_OTLP_ENDPOINT) {
