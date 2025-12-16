@@ -245,9 +245,13 @@ export const appFactory = (runtimeCollection?: RuntimeRequestCollection) => {
             }
 
             if (method.status) {
-                const status = typeof method.status === 'function'
-                 ? method.status(tokenParams)
-                 : method.status
+                let status = typeof method.status === 'function'
+                    ? method.status(tokenParams)
+                    : method.status
+
+                if (typeof status === 'string') {
+                    status = parseInt(status);
+                }
 
                 res.status(status);
             }
