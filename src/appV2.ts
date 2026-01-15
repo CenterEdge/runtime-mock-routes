@@ -137,10 +137,10 @@ export const appFactory = (runtimeCollection?: RuntimeRequestCollection) => {
                 severityText: severityText,
                 body: `Request ${req.path}`,
                 attributes: {
-                    'http.headers': req.headers,
                     'http.method': req.method,
                     'http.url': req.url,
-                    'http.request_body': req.body
+                    'http.request_body': req.body,
+                    'http.request_headers': req.headers,
                 }
             });
 
@@ -161,7 +161,7 @@ export const appFactory = (runtimeCollection?: RuntimeRequestCollection) => {
                             'http.method': req.method,
                             'http.url': req.url,
                             'http.response_body': body,
-                            'http.headers': res.getHeaders()
+                            'http.response_headers': res.getHeaders()
                         }
                     });
                 }
