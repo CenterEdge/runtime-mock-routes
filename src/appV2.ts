@@ -121,20 +121,30 @@ export const appFactory = (runtimeCollection?: RuntimeRequestCollection) => {
         const logger = logs.getLogger('mock-requests-logger');
 
         app.use((req, res, next) => {
-            // log the request
+
+            let severity = SeverityNumber.INFO;
+            let severityText = 'INFO';
+
+            // Log root requests as trace
+            if (req.path === '/') {
+                severity = SeverityNumber.TRACE;
+                severityText = 'TRACE';
+            }
+
+            // Log the request
             logger.emit({
-                severityNumber: SeverityNumber.INFO,
-                severityText: 'INFO',
+                severityNumber: severity,
+                severityText: severityText,
                 body: `Request ${req.path}`,
                 attributes: {
-                    'http.headers': req.headers,
                     'http.method': req.method,
                     'http.url': req.url,
                     'http.request_body': req.body,
+                    'http.request_headers': req.headers,
                 }
             });
 
-            // log the response
+            // Log the response
             const originalSend = res.send;
             let firstSend = true;
             res.send = function (body) {
@@ -143,14 +153,15 @@ export const appFactory = (runtimeCollection?: RuntimeRequestCollection) => {
                     firstSend = false;
 
                     logger.emit({
-                        severityNumber: SeverityNumber.INFO,
-                        severityText: 'INFO',
+                        severityNumber: severity,
+                        severityText: severityText,
                         body: `Response ${req.path}`,
                         attributes: {
                             'http.status_code': res.statusCode,
                             'http.method': req.method,
                             'http.url': req.url,
                             'http.response_body': body,
+                            'http.response_headers': res.getHeaders()
                         }
                     });
                 }
@@ -305,7 +316,7 @@ export const appFactory = (runtimeCollection?: RuntimeRequestCollection) => {
     app.put(/\/.*/, catchAllHandler);
     app.patch(/\/.*/, catchAllHandler);
     app.delete(/\/.*/, catchAllHandler);
-    
+
     Object.defineProperty(app, 'runtimeRequestCollection', {
         get: () => {
             return cloneDeep(runtimeRequestCollection);
