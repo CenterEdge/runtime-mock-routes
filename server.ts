@@ -27,21 +27,27 @@ const runServer = (sdk: NodeSDK) => {
 
     const seedFilePath = program.seed ? resolve(program.seed) : null;
 
-    const seedIsDirectory = seedFilePath ? fs.statSync(seedFilePath).isDirectory() : false;
+    // Tracks all files transitively required by the seed so we can bust & re-watch them
+    let trackedDeps = new Set<string>();
 
     function loadSeed(filePath: string): any {
-        if (seedIsDirectory) {
-            // Bust cache for every required file under the seed directory
-            const dirPrefix = filePath.endsWith('/') || filePath.endsWith('\\') ? filePath : filePath + (process.platform === 'win32' ? '\\' : '/');
-            for (const key of Object.keys(require.cache)) {
-                if (key.startsWith(dirPrefix)) {
-                    delete require.cache[key];
-                }
-            }
-        } else {
-            delete require.cache[require.resolve(filePath)];
+
+        // Bust cache for all previously tracked deps so we get fresh modules on reload
+        for (const key of trackedDeps) {
+            delete require.cache[key];
         }
+
+        // Snapshot before requiring — anything new afterwards is a transitive dep
+        const cacheBefore = new Set(Object.keys(require.cache));
         const funcOrJson = require(filePath);
+
+        trackedDeps = new Set<string>();
+        for (const key of Object.keys(require.cache)) {
+            if (!cacheBefore.has(key) && !key.includes('node_modules')) {
+                trackedDeps.add(key);
+            }
+        }
+
         return typeof funcOrJson === 'function' ? funcOrJson() : funcOrJson;
     }
 
@@ -83,37 +89,56 @@ const runServer = (sdk: NodeSDK) => {
     });
     }
 
-    // Watch seed file or directory for changes
+    // Watch seed and all transitive dependencies for changes
     if (program.watch && seedFilePath) {
         let watchDebounce: ReturnType<typeof setTimeout> | null = null;
-        const watchOptions = { persistent: true, recursive: seedIsDirectory };
+        let depWatchers: fs.FSWatcher[] = [];
 
-        fs.watch(seedFilePath, watchOptions, (eventType, filename) => {
+        function doReload() {
+            watchDebounce = null;
+            try {
+                const newRequests = loadSeed(seedFilePath);
+                currentApp = appFactory(newRequests);
+                console.log(`🔥[watch]: Seed reloaded — watching ${trackedDeps.size} file(s)`);
+                rewatchDeps();
+            } catch (err) {
+                console.error('🔥[watch]: Failed to reload seed:', err);
+            }
+        }
 
-            if (eventType !== 'change' && eventType !== 'rename') {
-                return;
+        function rewatchDeps() {
+            for (const w of depWatchers) {
+                w.close();
             }
 
-            // For directory watches, only react to JS/JSON file changes
-            if (seedIsDirectory && filename && !/\.(js|json)$/.test(filename)){
-                return;
-            }
+            depWatchers = [];
 
-            // Debounce: some editors write files multiple times in quick succession
-            if (watchDebounce) clearTimeout(watchDebounce);
-            watchDebounce = setTimeout(() => {
-                watchDebounce = null;
-                try {
-                    const newRequests = loadSeed(seedFilePath);
-                    currentApp = appFactory(newRequests);
-                    const changedDesc = seedIsDirectory && filename ? ` (${filename})` : '';
-                    console.log(`🔥[watch]: Seed reloaded — ${seedFilePath}${changedDesc}`);
-                } catch (err) {
-                    console.error('🔥[watch]: Failed to reload seed:', err);
+            for (const dep of trackedDeps) {
+                if (!fs.existsSync(dep)) {
+                    continue;
                 }
-            }, 100);
-        });
-        console.log(`🔥[watch]: Watching seed ${seedIsDirectory ? 'directory' : 'file'} for changes — ${seedFilePath}`);
+
+                try {
+                    const w = fs.watch(dep, { persistent: true }, (eventType) => {
+                        if (eventType !== 'change'){
+                            return;
+                        }
+
+                        if (watchDebounce) {
+                            clearTimeout(watchDebounce);
+                        }
+
+                        watchDebounce = setTimeout(doReload, 100);
+                    });
+                    depWatchers.push(w);
+                } catch {
+                    // File may have been removed; skip
+                }
+            }
+        }
+
+        rewatchDeps();
+        console.log(`🔥[watch]: Watching seed and ${trackedDeps.size} dep(s) — ${seedFilePath}`);
     }
 
     // Register signal handlers
