@@ -120,7 +120,7 @@ const runServer = (sdk: NodeSDK) => {
 
                 try {
                     const w = fs.watch(dep, { persistent: true }, (eventType) => {
-                        if (eventType !== 'change'){
+                        if (eventType !== 'change' && eventType !== 'rename') {
                             return;
                         }
 
