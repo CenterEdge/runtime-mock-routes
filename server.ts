@@ -132,6 +132,9 @@ const runServer = (sdk: NodeSDK) => {
 
                         watchDebounce = setTimeout(doReload, 100);
                     });
+                    w.on('error', (err) => {
+                        console.error(`🔥[watch]: Watcher error for ${dep}:`, err);
+                    });
                     depWatchers.push(w);
                 } catch {
                     // File may have been removed; skip
