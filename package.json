@@ -1,13 +1,13 @@
 {
   "name": "@centeredgesoft/runtime-mock-routes",
-  "version": "2.10.3",
+  "version": "2.11.0",
   "description": "",
   "main": "build/index.js",
   "scripts": {
     "build": "tsc --project ./",
     "start": "nodemon -r dotenv/config index.ts",
     "test": "jest",
-    "serve": "ts-node run.ts -s ./example/seed.js"
+    "serve": "ts-node run.ts --watch -s ./example/seed.js"
   },
   "bin": {
     "runtime-mock-routes": "./build/run.js"
