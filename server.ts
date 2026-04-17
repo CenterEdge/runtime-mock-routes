@@ -3,7 +3,7 @@ import http from 'http';
 import https from 'https';
 import { Express } from 'express'
 import { program } from 'commander';
-import { resolve } from 'path';
+import path, { resolve } from 'path';
 import { appFactory as appFactoryV1 } from './src/app';
 import { appFactory as appFactoryV2 } from './src/appV2';
 import { NodeSDK } from '@opentelemetry/sdk-node';
@@ -43,7 +43,9 @@ const runServer = (sdk: NodeSDK) => {
 
         trackedDeps = new Set<string>();
         for (const key of Object.keys(require.cache)) {
-            if (!cacheBefore.has(key) && !key.includes('node_modules')) {
+            const normalizedKey = path.normalize(key);
+            const segments = normalizedKey.split(path.sep);
+            if (!cacheBefore.has(key) && !segments.includes('node_modules')) {
                 trackedDeps.add(key);
             }
         }
