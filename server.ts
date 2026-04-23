@@ -22,6 +22,7 @@ const runServer = (sdk: NodeSDK) => {
         .option("-s, --seed <filePath>", "File path to seed the application", process.env.RUNTIME_MOCK_ROUTES_FILE_PATH)
         .option("-a, --appVersion <appVersion>", "App Version to use", AppVersion.v2)
         .option("-w, --watch", "Watch the seed file for changes and reload routes without restarting", false)
+        .option("--watch-poll [interval]", "Use stat polling instead of fs.watch (useful for network drives / containers / bind mounts). Optionally specify poll interval in ms.", false)
 
     program.parse(process.argv);
 
@@ -85,16 +86,18 @@ const runServer = (sdk: NodeSDK) => {
     httpServer.listen(program.port, () => {
         console.log(`⚡️[server]: Server is running at http://localhost:${program.port}`);
     });
+
     if (httpsServer) {
-    httpsServer.listen(program.httpsPort, () => {
-        console.log(`⚡️[server]: Server is running at https://localhost:${program.httpsPort}`);
-    });
+        httpsServer.listen(program.httpsPort, () => {
+            console.log(`⚡️[server]: Server is running at https://localhost:${program.httpsPort}`);
+        });
     }
 
     // Watch seed and all transitive dependencies for changes
     if (program.watch && seedFilePath) {
         let watchDebounce: ReturnType<typeof setTimeout> | null = null;
-        let depWatchers: fs.FSWatcher[] = [];
+        const usePolling = program.watchPoll !== false;
+        const pollInterval = typeof program.watchPoll === 'string' ? parseInt(program.watchPoll, 10) || 300 : 300;
 
         function doReload() {
             watchDebounce = null;
@@ -108,42 +111,57 @@ const runServer = (sdk: NodeSDK) => {
             }
         }
 
+        function scheduleReload() {
+            if (watchDebounce) clearTimeout(watchDebounce);
+            watchDebounce = setTimeout(doReload, 100);
+        }
+
+        let watchedFiles = new Set<string>();
+        let depWatchers: fs.FSWatcher[] = [];
+
         function rewatchDeps() {
-            for (const w of depWatchers) {
-                w.close();
-            }
+            const deps = [...trackedDeps].filter(d => fs.existsSync(d));
 
-            depWatchers = [];
-
-            for (const dep of trackedDeps) {
-                if (!fs.existsSync(dep)) {
-                    continue;
+            if (usePolling) {
+                // Stop polling files no longer in the dep set
+                for (const f of watchedFiles) {
+                    if (!trackedDeps.has(f)) {
+                        fs.unwatchFile(f);
+                        watchedFiles.delete(f);
+                    }
                 }
+                // Start polling new deps
+                for (const dep of deps) {
+                    if (!watchedFiles.has(dep)) {
+                        fs.watchFile(dep, { persistent: true, interval: pollInterval }, (curr, prev) => {
+                            if (curr.mtimeMs !== prev.mtimeMs) scheduleReload();
+                        });
+                        watchedFiles.add(dep);
+                    }
+                }
+            } else {
+                // Native fs.watch path
+                for (const w of depWatchers) w.close();
+                depWatchers = [];
 
-                try {
-                    const w = fs.watch(dep, { persistent: true }, (eventType) => {
-                        if (eventType !== 'change' && eventType !== 'rename') {
-                            return;
-                        }
-
-                        if (watchDebounce) {
-                            clearTimeout(watchDebounce);
-                        }
-
-                        watchDebounce = setTimeout(doReload, 100);
-                    });
-                    w.on('error', (err) => {
-                        console.error(`🔥[watch]: Watcher error for ${dep}:`, err);
-                    });
-                    depWatchers.push(w);
-                } catch {
-                    // File may have been removed; skip
+                for (const dep of deps) {
+                    try {
+                        const w = fs.watch(dep, { persistent: true }, (eventType) => {
+                            if (eventType !== 'change' && eventType !== 'rename') return;
+                            scheduleReload();
+                        });
+                        w.on('error', (err) => console.error(`🔥[watch]: Watcher error for ${dep}:`, err));
+                        depWatchers.push(w);
+                    } catch {
+                        // File may have been removed; skip
+                    }
                 }
             }
         }
 
         rewatchDeps();
-        console.log(`🔥[watch]: Watching seed and ${trackedDeps.size} dep(s) — ${seedFilePath}`);
+        const watchMode = usePolling ? `stat polling (${pollInterval}ms)` : 'fs.watch';
+        console.log(`🔥[watch]: Watching seed and ${trackedDeps.size} dep(s) via ${watchMode} — ${seedFilePath}`);
     }
 
     // Register signal handlers
