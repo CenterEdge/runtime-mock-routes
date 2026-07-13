@@ -6,7 +6,9 @@ import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
 let logRecordProcessors: logs.LogRecordProcessor[] | undefined = undefined;
 if (!process.env.OTEL_EXPORTER_OTLP_ENDPOINT) {
   // OTLP isn't configured, fallback to console logging
-  logRecordProcessors = [new logs.SimpleLogRecordProcessor(new logs.ConsoleLogRecordExporter())];
+  logRecordProcessors = [
+    new logs.SimpleLogRecordProcessor({ exporter: new logs.ConsoleLogRecordExporter() })
+  ];
 }
 
 const sdk = new NodeSDK({
