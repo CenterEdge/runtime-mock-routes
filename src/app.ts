@@ -221,6 +221,7 @@ export const appFactory = (runtimeCollection?: MethodBasedRuntimeRequestCollecti
     app.put(/\/.*/, catchAllHandler);
     app.patch(/\/.*/, catchAllHandler);
     app.delete(/\/.*/, catchAllHandler);
+    app.query(/\/.*/, catchAllHandler);
     
     Object.defineProperty(app, 'runtimeRequestCollection', {
         get: () => {
