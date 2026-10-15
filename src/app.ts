@@ -28,8 +28,8 @@ Handlebars.registerHelper('chance', (funcName: string, ...rest: any[]) => {
     }
 })
 
-type SupportedMethodsType = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
-export const SupportedMethodsColection: SupportedMethodsType = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
+type SupportedMethodsType = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'QUERY'];
+export const SupportedMethodsColection: SupportedMethodsType = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'QUERY'];
 export type SupportedMethod = SupportedMethodsType[number];
 
 export const isSupportedMethod = (obj: any): obj is SupportedMethod => SupportedMethodsColection.includes(obj);
@@ -221,6 +221,7 @@ export const appFactory = (runtimeCollection?: MethodBasedRuntimeRequestCollecti
     app.put(/\/.*/, catchAllHandler);
     app.patch(/\/.*/, catchAllHandler);
     app.delete(/\/.*/, catchAllHandler);
+    app.query(/\/.*/, catchAllHandler);
     
     Object.defineProperty(app, 'runtimeRequestCollection', {
         get: () => {
